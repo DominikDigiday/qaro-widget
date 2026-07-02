@@ -14,7 +14,7 @@
     overflow: hidden;           /* žádné scrollbary uvnitř iframe */
     background: transparent;    /* v iframe splyne s webem */
     font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-    color: #1a2b3c;
+    color: var(--text, #1a2b3c);
   }
 
   .wrap {
@@ -25,13 +25,15 @@
 
   /* celá karta je jeden odkaz */
   .karta {
+    position: relative;
+    overflow: hidden;           /* ořez obrázku na pozadí do zaoblených rohů */
     flex: 1 1 auto;
     display: flex;
     align-items: center;
     gap: 22px;
     padding: 14px 24px;
     border-radius: 14px;
-    background: #fff;
+    background: var(--karta-pozadi, #fff);
     border: 1px solid var(--ramecek, #dce9f0);
     border-left: 6px solid var(--akcent, #00a2e8);
     box-shadow: 0 3px 10px rgba(0,0,0,.09);
@@ -39,6 +41,20 @@
     color: inherit;
     transition: transform .15s ease, box-shadow .15s ease;
   }
+
+  /* volitelný obrázek na pozadí karty, opacity přes barvu pozadí */
+  .karta::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: var(--bg-img, none);
+    background-size: cover;
+    background-position: center;
+    opacity: var(--bg-opacity, 1);
+    pointer-events: none;
+  }
+
+  .karta > * { position: relative; z-index: 1; }
 
   .karta:hover {
     transform: translateY(-2px);
@@ -85,7 +101,7 @@
     display: block;
     margin-top: 2px;
     font-size: .85rem;
-    color: #5b6b7a;
+    color: var(--text-tlumeny, #5b6b7a);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -99,7 +115,7 @@
     margin-top: 8px;
     font-size: .92rem;
     line-height: 1.4;
-    color: #5b6b7a;
+    color: var(--text-tlumeny, #5b6b7a);
   }
 
   .prava {
@@ -130,7 +146,7 @@
   .poznamka {
     margin-top: 6px;
     font-size: .72rem;
-    color: #5b6b7a;
+    color: var(--text-tlumeny, #5b6b7a);
     white-space: nowrap;
   }
 
@@ -145,7 +161,7 @@
     border: 1px dashed #c3cdd6;
     border-radius: 14px;
     background: #fff;
-    color: #5b6b7a;
+    color: var(--text-tlumeny, #5b6b7a);
     font-size: .9rem;
     text-align: center;
     padding: 12px;
@@ -266,6 +282,10 @@
   var note = str(cfg.n);
   var logo = safeImgUrl(str(cfg.l));
   var color = /^#[0-9a-f]{6}$/i.test(str(cfg.c)) ? str(cfg.c) : "#00a2e8";
+  var kartaBg = /^#[0-9a-f]{6}$/i.test(str(cfg.k)) ? str(cfg.k) : "#ffffff";
+  var bgImg = safeImgUrl(str(cfg.p));
+  var bgOpacity = Math.min(100, Math.max(0, parseInt(cfg.o, 10)));
+  if (isNaN(bgOpacity)) bgOpacity = 100;
 
   document.title = title;
   var root = document.documentElement;
@@ -274,6 +294,19 @@
   root.style.setProperty("--akcent-svetly", shade(color, 0.9));
   root.style.setProperty("--ramecek", shade(color, 0.84));
   root.style.setProperty("--cta-text", luma(color) > 0.5 ? "#16323f" : "#ffffff");
+
+  root.style.setProperty("--karta-pozadi", kartaBg);
+  if (luma(kartaBg) < 0.45) {
+    /* tmavé pozadí karty: texty se přepnou na světlé */
+    root.style.setProperty("--text", "#ffffff");
+    root.style.setProperty("--text-tlumeny", "rgba(255,255,255,.78)");
+  }
+  if (bgImg) {
+    /* uvozovky a zpětná lomítka nesmí utéct z url("…") */
+    var bezpecna = bgImg.replace(/\\/g, "%5C").replace(/"/g, "%22");
+    root.style.setProperty("--bg-img", 'url("' + bezpecna + '")');
+    root.style.setProperty("--bg-opacity", String(bgOpacity / 100));
+  }
 
   var karta = el("a", "karta");
   karta.href = url;

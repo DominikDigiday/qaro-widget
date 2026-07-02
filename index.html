@@ -97,6 +97,8 @@
 
   .pole textarea { resize: vertical; min-height: 54px; }
 
+  .pole input[type="range"] { width: 100%; accent-color: var(--akcent); }
+
   .pole .napoveda {
     margin-top: 4px;
     font-size: .75rem;
@@ -302,6 +304,27 @@
       <div class="napoveda">Světlejší a tmavší odstíny si widget dopočítá sám.</div>
     </div>
 
+    <div class="pole">
+      <label for="f-bg-hex">Barva pozadí karty</label>
+      <div class="barva-radek">
+        <input type="color" id="f-bg" value="#ffffff">
+        <input type="text" id="f-bg-hex" value="#ffffff">
+      </div>
+      <div class="napoveda">U tmavého pozadí se texty widgetu automaticky přepnou na světlé.</div>
+    </div>
+
+    <div class="pole">
+      <label for="f-bgimg">Obrázek na pozadí karty <span class="nepovinne">(nepovinné)</span></label>
+      <input type="url" id="f-bgimg" placeholder="https://…/fotka.jpg">
+      <div class="napoveda">Roztáhne se přes celou kartu (cover). Musí to být veřejně dostupný obrázek.</div>
+    </div>
+
+    <div class="pole">
+      <label for="f-opacity">Opacity obrázku: <span id="opacity-hodnota">100&nbsp;%</span></label>
+      <input type="range" id="f-opacity" min="0" max="100" value="100">
+      <div class="napoveda">Menší hodnota, průhlednější obrázek. Prosvítá skrz něj barva pozadí karty, texty tak zůstanou čitelné.</div>
+    </div>
+
     <div class="tlacitka">
       <button type="button" class="primarni" id="b-vzor">Vyplnit vzorová data</button>
       <button type="button" id="b-reset">Nový widget</button>
@@ -398,6 +421,8 @@
     b: $("f-btn"), n: $("f-note"), l: $("f-logo")
   };
   var barva = $("f-color"), barvaHex = $("f-color-hex");
+  var pozadi = $("f-bg"), pozadiHex = $("f-bg-hex");
+  var bgImg = $("f-bgimg"), opacity = $("f-opacity"), opacityHodnota = $("opacity-hodnota");
   var sirka = $("f-w"), vyska = $("f-h");
   var nahled = $("nahled"), neplatne = $("neplatne");
   var oUrl = $("o-url"), oIframe = $("o-iframe"), oDelka = $("o-delka");
@@ -430,6 +455,16 @@
     });
     var c = barvaHex.value.trim().toLowerCase();
     if (/^#[0-9a-f]{6}$/.test(c) && c !== "#00a2e8") cfg.c = c;
+
+    var k = pozadiHex.value.trim().toLowerCase();
+    if (/^#[0-9a-f]{6}$/.test(k) && k !== "#ffffff") cfg.k = k;
+
+    var p = bgImg.value.trim();
+    if (p) {
+      cfg.p = p;
+      var o = parseInt(opacity.value, 10);
+      if (!isNaN(o) && o >= 0 && o < 100) cfg.o = o;
+    }
     return cfg;
   }
 
@@ -440,6 +475,15 @@
     var c = (typeof cfg.c === "string" && /^#[0-9a-f]{6}$/i.test(cfg.c)) ? cfg.c.toLowerCase() : "#00a2e8";
     barva.value = c;
     barvaHex.value = c;
+
+    var k = (typeof cfg.k === "string" && /^#[0-9a-f]{6}$/i.test(cfg.k)) ? cfg.k.toLowerCase() : "#ffffff";
+    pozadi.value = k;
+    pozadiHex.value = k;
+
+    bgImg.value = typeof cfg.p === "string" ? cfg.p : "";
+    var o = parseInt(cfg.o, 10);
+    opacity.value = (!isNaN(o) && o >= 0 && o <= 100) ? o : 100;
+    opacityHodnota.textContent = opacity.value + " %";
   }
 
   /* ---------- sestavení URL widgetu ---------- */
@@ -527,6 +571,19 @@
   barvaHex.addEventListener("input", function () {
     var v = barvaHex.value.trim();
     if (/^#[0-9a-f]{6}$/i.test(v)) barva.value = v.toLowerCase();
+    naplanuj();
+  });
+
+  pozadi.addEventListener("input", function () { pozadiHex.value = pozadi.value; naplanuj(); });
+  pozadiHex.addEventListener("input", function () {
+    var v = pozadiHex.value.trim();
+    if (/^#[0-9a-f]{6}$/i.test(v)) pozadi.value = v.toLowerCase();
+    naplanuj();
+  });
+
+  bgImg.addEventListener("input", naplanuj);
+  opacity.addEventListener("input", function () {
+    opacityHodnota.textContent = opacity.value + " %";
     naplanuj();
   });
 

@@ -30,6 +30,7 @@ Dlouhou URL widgetu jde v generátoru jedním klikem zkrátit na tvar `https://q
 - Odkaz se otevírá přes `target="_blank"`. QARO vkládá iframe se sandboxem bez `allow-top-navigation`, takže navigace celého okna by selhala, `allow-popups` v sandboxu je.
 - Widget vyplní celou plochu iframe, ať má jakýkoliv rozměr. Pod 900 px šířky skryje popis, pod 640 px i logo a poznámku, takže nízká výška stačí i na mobilu.
 - Světlejší a tmavší odstíny (hover, pozadí loga, rámeček) se dopočítávají z hlavní barvy, barva textu tlačítka se volí automaticky podle kontrastu.
+- Pozadí karty jde změnit: barva (u tmavé se texty automaticky přepnou na světlé) a volitelný obrázek přes celou kartu (cover) s nastavitelnou opacity, skrz kterou prosvítá barva pozadí.
 
 ## Limity
 
