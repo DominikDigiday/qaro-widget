@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Generátor widgetů | DigiDay</title>
+<style>
+  :root {
+    --akcent: #00a2e8;
+    --text: #1a2b3c;
+    --text-tlumeny: #5b6b7a;
+    --pozadi: #f2f5f7;
+    --ramecek: #dbe3e9;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--pozadi);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  header {
+    background: #fff;
+    border-bottom: 1px solid var(--ramecek);
+    padding: 18px 24px;
+  }
+
+  header h1 { font-size: 1.25rem; }
+
+  header p {
+    margin-top: 4px;
+    font-size: .9rem;
+    color: var(--text-tlumeny);
+  }
+
+  main {
+    display: grid;
+    grid-template-columns: 420px minmax(0, 1fr);   /* minmax(0,…), jinak náhled 1188 px sloupec roztáhne */
+    gap: 20px;
+    padding: 20px 24px;
+    max-width: 1800px;
+    margin: 0 auto;
+    align-items: start;
+  }
+
+  @media (max-width: 1000px) {
+    main { grid-template-columns: 1fr; }
+  }
+
+  .panel {
+    background: #fff;
+    border: 1px solid var(--ramecek);
+    border-radius: 12px;
+    padding: 20px;
+  }
+
+  .panel h2 {
+    font-size: 1rem;
+    margin-bottom: 14px;
+  }
+
+  .pole { margin-bottom: 14px; }
+
+  .pole label {
+    display: block;
+    font-size: .82rem;
+    font-weight: 600;
+    margin-bottom: 5px;
+  }
+
+  .pole label .nepovinne {
+    font-weight: 400;
+    color: var(--text-tlumeny);
+  }
+
+  .pole input[type="text"],
+  .pole input[type="url"],
+  .pole input[type="number"],
+  .pole textarea {
+    width: 100%;
+    padding: 9px 11px;
+    border: 1px solid var(--ramecek);
+    border-radius: 8px;
+    font: inherit;
+    font-size: .9rem;
+    color: var(--text);
+    background: #fff;
+  }
+
+  .pole input:focus, .pole textarea:focus {
+    outline: 2px solid var(--akcent);
+    outline-offset: -1px;
+  }
+
+  .pole textarea { resize: vertical; min-height: 54px; }
+
+  .pole .napoveda {
+    margin-top: 4px;
+    font-size: .75rem;
+    color: var(--text-tlumeny);
+  }
+
+  .radek { display: flex; gap: 10px; }
+  .radek .pole { flex: 1; }
+
+  .barva-radek { display: flex; gap: 10px; align-items: center; }
+
+  .barva-radek input[type="color"] {
+    width: 46px;
+    height: 38px;
+    padding: 2px;
+    border: 1px solid var(--ramecek);
+    border-radius: 8px;
+    background: #fff;
+    cursor: pointer;
+  }
+
+  .barva-radek input[type="text"] { flex: 1; }
+
+  .tlacitka { display: flex; gap: 10px; margin-top: 18px; }
+
+  button {
+    font: inherit;
+    font-size: .85rem;
+    font-weight: 600;
+    padding: 9px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--ramecek);
+    background: #fff;
+    color: var(--text);
+    cursor: pointer;
+  }
+
+  button:hover { background: var(--pozadi); }
+
+  button.primarni {
+    background: var(--akcent);
+    border-color: var(--akcent);
+    color: #fff;
+  }
+
+  button.primarni:hover { background: #0084bd; }
+
+  .nacist { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--ramecek); }
+
+  /* ---------- pravý sloupec ---------- */
+
+  .nahled-panel .rozmery {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+
+  .nahled-panel .rozmery .pole { margin-bottom: 0; width: 110px; }
+
+  .nahled-plocha {
+    border: 1px solid var(--ramecek);
+    border-radius: 10px;
+    background:
+      repeating-conic-gradient(#e9eef2 0% 25%, #f7fafb 0% 50%) 0 0 / 22px 22px;
+    padding: 14px;
+    overflow-x: auto;
+  }
+
+  .nahled-plocha #nahled-box {
+    margin: 0 auto;
+    overflow: hidden;
+  }
+
+  .nahled-plocha iframe {
+    display: block;
+    border: 0;
+    background: transparent;
+    transform-origin: top left;
+  }
+
+  .fit-prepinac {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: .82rem;
+    padding-bottom: 10px;
+    cursor: pointer;
+  }
+
+  .vystup { margin-top: 20px; }
+
+  .vystup .pole { position: relative; }
+
+  .vystup input, .vystup textarea {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: .78rem;
+    padding-right: 96px;
+    background: #f8fafb;
+  }
+
+  .vystup textarea { min-height: 66px; }
+
+  .kopirovat {
+    position: absolute;
+    right: 6px;
+    top: 26px;
+    padding: 6px 10px;
+    font-size: .75rem;
+  }
+
+  .vystup .delka {
+    margin-top: 4px;
+    font-size: .72rem;
+    color: var(--text-tlumeny);
+  }
+
+  .vystup .delka.varovani { color: #b3541e; font-weight: 600; }
+
+  .neplatne {
+    margin-top: 8px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: #fdf3e7;
+    border: 1px solid #f0d9bc;
+    color: #8a5a1d;
+    font-size: .82rem;
+    display: none;
+  }
+
+  footer {
+    padding: 14px 24px 26px;
+    font-size: .75rem;
+    color: var(--text-tlumeny);
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Generátor widgetů</h1>
+  <p>Vyplň formulář, zkopíruj URL a vlož ji do iframe modulu v QARO. Nic dalšího není potřeba, widget se publikuje sám přes URL.</p>
+</header>
+
+<main>
+  <!-- ================= FORMULÁŘ ================= -->
+  <section class="panel">
+    <h2>Obsah widgetu</h2>
+
+    <div class="pole">
+      <label for="f-title">Název</label>
+      <input type="text" id="f-title" placeholder="Střední škola polytechnická Hustopeče">
+    </div>
+
+    <div class="pole">
+      <label for="f-subtitle">Podtitulek <span class="nepovinne">(nepovinné)</span></label>
+      <input type="text" id="f-subtitle" placeholder="příspěvková organizace">
+    </div>
+
+    <div class="pole">
+      <label for="f-desc">Popis <span class="nepovinne">(nepovinné, max. 2 řádky)</span></label>
+      <textarea id="f-desc" rows="2" placeholder="Krátký doplňující text."></textarea>
+    </div>
+
+    <div class="pole">
+      <label for="f-url">Adresa, kam widget odkazuje</label>
+      <input type="url" id="f-url" placeholder="https://hustopecess.edupage.org/">
+      <div class="napoveda">Otevře se v novém okně.</div>
+    </div>
+
+    <div class="radek">
+      <div class="pole">
+        <label for="f-btn">Text tlačítka</label>
+        <input type="text" id="f-btn" placeholder="Přejít na web">
+      </div>
+      <div class="pole">
+        <label for="f-note">Poznámka pod tlačítkem <span class="nepovinne">(nepovinné)</span></label>
+        <input type="text" id="f-note" placeholder="Odkaz se otevře v novém okně.">
+      </div>
+    </div>
+
+    <div class="pole">
+      <label for="f-logo">Logo, adresa obrázku <span class="nepovinne">(nepovinné)</span></label>
+      <input type="url" id="f-logo" placeholder="https://…/logo.png">
+      <div class="napoveda">Když zůstane prázdné, widget bude bez loga. U EduPage škol bývá logo v HTML stránky na adrese static.edupage.org.</div>
+    </div>
+
+    <div class="pole">
+      <label for="f-color-hex">Hlavní barva</label>
+      <div class="barva-radek">
+        <input type="color" id="f-color" value="#00a2e8">
+        <input type="text" id="f-color-hex" value="#00a2e8">
+      </div>
+      <div class="napoveda">Světlejší a tmavší odstíny si widget dopočítá sám.</div>
+    </div>
+
+    <div class="tlacitka">
+      <button type="button" class="primarni" id="b-vzor">Vyplnit vzorová data</button>
+      <button type="button" id="b-reset">Nový widget</button>
+    </div>
+
+    <div class="nacist">
+      <div class="pole">
+        <label for="f-import">Upravit existující widget</label>
+        <input type="text" id="f-import" placeholder="Sem vlož URL hotového widgetu">
+        <div class="napoveda">Formulář se předvyplní podle vložené URL.</div>
+      </div>
+      <button type="button" id="b-import">Načíst do formuláře</button>
+    </div>
+  </section>
+
+  <!-- ================= NÁHLED + VÝSTUP ================= -->
+  <section class="panel nahled-panel">
+    <h2>Náhled</h2>
+
+    <div class="rozmery">
+      <div class="pole">
+        <label for="f-w">Šířka náhledu</label>
+        <input type="number" id="f-w" value="1188" min="200" max="2400">
+      </div>
+      <div class="pole">
+        <label for="f-h">Výška iframe</label>
+        <input type="number" id="f-h" value="175" min="80" max="1200">
+      </div>
+      <label class="fit-prepinac"><input type="checkbox" id="f-fit" checked> Zmenšit náhled na šířku okna</label>
+    </div>
+
+    <div class="nahled-plocha">
+      <div id="nahled-box"><iframe id="nahled" title="Náhled widgetu"></iframe></div>
+    </div>
+
+    <div class="neplatne" id="neplatne">Aby šel widget publikovat, vyplň aspoň název a adresu (musí začínat na http:// nebo https://).</div>
+
+    <div class="vystup">
+      <div class="pole">
+        <label for="o-url">URL widgetu, tu vlož do iframe modulu v QARO</label>
+        <input type="text" id="o-url" readonly>
+        <button type="button" class="kopirovat" data-cil="o-url">Kopírovat</button>
+        <div class="delka" id="o-delka"></div>
+      </div>
+
+      <div class="pole">
+        <label for="o-iframe">Kód pro vložení na jiný web</label>
+        <textarea id="o-iframe" readonly></textarea>
+        <button type="button" class="kopirovat" data-cil="o-iframe">Kopírovat</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>DigiDay, interní nástroj. Widget se nikam neukládá, celá jeho podoba je zakódovaná v URL.</footer>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---------- base64url kódování ---------- */
+
+  function strToB64u(s) {
+    var bytes = new TextEncoder().encode(s);
+    var bin = "";
+    bytes.forEach(function (b) { bin += String.fromCharCode(b); });
+    return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  }
+
+  function b64uToStr(s) {
+    s = s.replace(/-/g, "+").replace(/_/g, "/");
+    while (s.length % 4) s += "=";
+    var bin = atob(s);
+    var bytes = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return new TextDecoder().decode(bytes);
+  }
+
+  /* ---------- prvky ---------- */
+
+  var $ = function (id) { return document.getElementById(id); };
+  var pole = {
+    t: $("f-title"), s: $("f-subtitle"), d: $("f-desc"), u: $("f-url"),
+    b: $("f-btn"), n: $("f-note"), l: $("f-logo")
+  };
+  var barva = $("f-color"), barvaHex = $("f-color-hex");
+  var sirka = $("f-w"), vyska = $("f-h");
+  var nahled = $("nahled"), neplatne = $("neplatne");
+  var oUrl = $("o-url"), oIframe = $("o-iframe"), oDelka = $("o-delka");
+
+  var VZOR = {
+    t: "Střední škola polytechnická Hustopeče",
+    s: "příspěvková organizace",
+    d: "",
+    u: "https://hustopecess.edupage.org/",
+    b: "Přejít na EduPage",
+    n: "Odkaz se otevře v novém okně.",
+    l: "https://static.edupage.org/global/pics/skins/logo/ifxb43dbb6849b50276_g.png",
+    c: "#00a2e8"
+  };
+
+  var VYCHOZI_BTN = "Přejít na web";
+
+  /* ---------- čtení a zápis formuláře ---------- */
+
+  function cfgZFormulare() {
+    var cfg = { v: 1 };
+    Object.keys(pole).forEach(function (k) {
+      var v = pole[k].value.trim();
+      if (v) cfg[k] = v;
+    });
+    var c = barvaHex.value.trim().toLowerCase();
+    if (/^#[0-9a-f]{6}$/.test(c) && c !== "#00a2e8") cfg.c = c;
+    return cfg;
+  }
+
+  function cfgDoFormulare(cfg) {
+    Object.keys(pole).forEach(function (k) {
+      pole[k].value = typeof cfg[k] === "string" ? cfg[k] : "";
+    });
+    var c = (typeof cfg.c === "string" && /^#[0-9a-f]{6}$/i.test(cfg.c)) ? cfg.c.toLowerCase() : "#00a2e8";
+    barva.value = c;
+    barvaHex.value = c;
+  }
+
+  /* ---------- sestavení URL widgetu ---------- */
+
+  function widgetBase() {
+    /* generátor je na …/qaro-widget/, widget na …/qaro-widget/w/ */
+    return new URL("w/", location.href).href;
+  }
+
+  function widgetUrl(cfg) {
+    return widgetBase() + "?c=" + strToB64u(JSON.stringify(cfg));
+  }
+
+  function escapeAttr(s) {
+    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
+  }
+
+  /* ---------- překreslení náhledu a výstupů ---------- */
+
+  var casovac = null;
+
+  function prekresli() {
+    var cfg = cfgZFormulare();
+    var w = parseInt(sirka.value, 10) || 1188;
+    var h = parseInt(vyska.value, 10) || 175;
+    nahled.style.width = w + "px";
+    nahled.style.height = h + "px";
+
+    /* zmenšení náhledu, aby se vešel na šířku panelu */
+    var box = $("nahled-box");
+    var plocha = box.parentElement;
+    var dostupna = plocha.clientWidth - 28;      /* padding plochy 2x14 */
+    var scale = ($("f-fit").checked && dostupna > 0 && w > dostupna) ? dostupna / w : 1;
+    nahled.style.transform = scale === 1 ? "none" : "scale(" + scale + ")";
+    box.style.width = Math.round(w * scale) + "px";
+    box.style.height = Math.round(h * scale) + "px";
+
+    var platne = cfg.t && cfg.u && /^https?:\/\//i.test(cfg.u);
+    neplatne.style.display = platne ? "none" : "block";
+
+    var url = widgetUrl(cfg);
+    try {
+      nahled.contentWindow.location.replace(url);   /* replace nezanáší historii prohlížeče */
+    } catch (e) {
+      nahled.src = url;
+    }
+
+    if (platne) {
+      oUrl.value = url;
+      oIframe.value = '<iframe src="' + escapeAttr(url) + '" width="100%" height="' + h +
+        '" style="border:0" loading="lazy" title="' + escapeAttr(cfg.t) + '"></iframe>';
+      oDelka.textContent = "Délka URL: " + url.length + " znaků";
+      oDelka.className = "delka" + (url.length > 2000 ? " varovani" : "");
+      if (url.length > 2000) oDelka.textContent += ", zkrať texty, některé systémy tak dlouhou URL nevezmou";
+    } else {
+      oUrl.value = "";
+      oIframe.value = "";
+      oDelka.textContent = "";
+    }
+
+    try { localStorage.setItem("qaro-widget-form", JSON.stringify(cfg)); } catch (e) {}
+  }
+
+  function naplanuj() {
+    clearTimeout(casovac);
+    casovac = setTimeout(prekresli, 250);
+  }
+
+  /* ---------- události ---------- */
+
+  Object.keys(pole).forEach(function (k) { pole[k].addEventListener("input", naplanuj); });
+  sirka.addEventListener("input", naplanuj);
+  vyska.addEventListener("input", naplanuj);
+  $("f-fit").addEventListener("change", prekresli);
+  window.addEventListener("resize", naplanuj);
+
+  barva.addEventListener("input", function () { barvaHex.value = barva.value; naplanuj(); });
+  barvaHex.addEventListener("input", function () {
+    var v = barvaHex.value.trim();
+    if (/^#[0-9a-f]{6}$/i.test(v)) barva.value = v.toLowerCase();
+    naplanuj();
+  });
+
+  $("b-vzor").addEventListener("click", function () {
+    cfgDoFormulare(VZOR);
+    prekresli();
+  });
+
+  $("b-reset").addEventListener("click", function () {
+    cfgDoFormulare({ b: VYCHOZI_BTN, n: "Odkaz se otevře v novém okně." });
+    try { localStorage.removeItem("qaro-widget-form"); } catch (e) {}
+    prekresli();
+  });
+
+  $("b-import").addEventListener("click", function () {
+    var m = $("f-import").value.match(/[?&]c=([A-Za-z0-9_-]+)/);
+    if (!m) { alert("V téhle URL není konfigurace widgetu."); return; }
+    try {
+      cfgDoFormulare(JSON.parse(b64uToStr(m[1])));
+      $("f-import").value = "";
+      prekresli();
+    } catch (e) {
+      alert("Konfiguraci z URL se nepodařilo přečíst.");
+    }
+  });
+
+  document.querySelectorAll(".kopirovat").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var cil = $(btn.dataset.cil);
+      if (!cil.value) return;
+      cil.select();
+      var hotovo = function () {
+        var puvodni = btn.textContent;
+        btn.textContent = "Zkopírováno";
+        setTimeout(function () { btn.textContent = puvodni; }, 1400);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(cil.value).then(hotovo, function () {
+          document.execCommand("copy"); hotovo();
+        });
+      } else {
+        document.execCommand("copy"); hotovo();
+      }
+    });
+  });
+
+  /* ---------- start: ?c= v URL > uložený formulář > vzor ---------- */
+
+  var start = null;
+  var m = location.search.match(/[?&]c=([A-Za-z0-9_-]+)/);
+  if (m) {
+    try { start = JSON.parse(b64uToStr(m[1])); } catch (e) {}
+  }
+  if (!start) {
+    try { start = JSON.parse(localStorage.getItem("qaro-widget-form")); } catch (e) {}
+  }
+  if (!start || typeof start !== "object" || (!start.t && !start.u)) {
+    start = VZOR;
+  }
+  cfgDoFormulare(start);
+  prekresli();
+})();
+</script>
+
+</body>
+</html>

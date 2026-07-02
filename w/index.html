@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Widget</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* widget vyplní celý iframe, ať má jakoukoliv velikost */
+  html, body {
+    height: 100%;
+    overflow: hidden;           /* žádné scrollbary uvnitř iframe */
+    background: transparent;    /* v iframe splyne s webem */
+    font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    color: #1a2b3c;
+  }
+
+  .wrap {
+    height: 100%;
+    padding: 10px 12px;
+    display: flex;
+  }
+
+  /* celá karta je jeden odkaz */
+  .karta {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    padding: 14px 24px;
+    border-radius: 14px;
+    background: #fff;
+    border: 1px solid var(--ramecek, #dce9f0);
+    border-left: 6px solid var(--akcent, #00a2e8);
+    box-shadow: 0 3px 10px rgba(0,0,0,.09);
+    text-decoration: none;
+    color: inherit;
+    transition: transform .15s ease, box-shadow .15s ease;
+  }
+
+  .karta:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 14px rgba(0,0,0,.16);
+  }
+
+  .karta:focus-visible {
+    outline: 3px solid var(--akcent, #00a2e8);
+    outline-offset: 2px;
+  }
+
+  .logo {
+    flex: 0 0 auto;
+    width: 150px;
+    height: 118px;
+    max-height: 100%;           /* v nižším iframe se logo zmenší, ať nic nepřeteče */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--akcent-svetly, #e6f6fd);
+    border-radius: 12px;
+    padding: 10px 14px;
+  }
+
+  .logo img {
+    max-width: 100%;
+    max-height: 100%;
+    display: block;
+  }
+
+  .obsah { flex: 1 1 auto; min-width: 0; }
+
+  .nazev {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    font-size: 1.25rem;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+
+  .podtitul {
+    display: block;
+    margin-top: 2px;
+    font-size: .85rem;
+    color: #5b6b7a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .popis {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    margin-top: 8px;
+    font-size: .92rem;
+    line-height: 1.4;
+    color: #5b6b7a;
+  }
+
+  .prava {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 22px;
+    border-radius: 10px;
+    background: var(--akcent, #00a2e8);
+    color: var(--cta-text, #fff);
+    font-size: .95rem;
+    font-weight: 600;
+    white-space: nowrap;
+    transition: background .15s ease;
+  }
+
+  .karta:hover .cta { background: var(--akcent-tmavy, #0084bd); }
+
+  .cta svg { flex: 0 0 auto; }
+
+  .poznamka {
+    margin-top: 6px;
+    font-size: .72rem;
+    color: #5b6b7a;
+    white-space: nowrap;
+  }
+
+  /* chybová / prázdná konfigurace */
+  .chyba {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    border: 1px dashed #c3cdd6;
+    border-radius: 14px;
+    background: #fff;
+    color: #5b6b7a;
+    font-size: .9rem;
+    text-align: center;
+    padding: 12px;
+  }
+
+  .chyba a { color: #00a2e8; }
+
+  /* užší šířky (mobil): schovat popis a logo, ať se widget vejde i do nízkého iframe */
+  @media (max-width: 900px) {
+    .popis { display: none; }
+  }
+
+  @media (max-width: 640px) {
+    .logo { display: none; }
+    .karta { gap: 14px; padding: 12px 16px; }
+    .nazev { font-size: 1.05rem; }
+    .cta { padding: 10px 14px; font-size: .85rem; }
+    .poznamka { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap" id="wrap"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---------- dekódování konfigurace z URL (?c=base64url JSON) ---------- */
+
+  function b64uToStr(s) {
+    s = s.replace(/-/g, "+").replace(/_/g, "/");
+    while (s.length % 4) s += "=";
+    var bin = atob(s);
+    var bytes = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return new TextDecoder().decode(bytes);
+  }
+
+  function getCfg() {
+    var m = location.search.match(/[?&]c=([A-Za-z0-9_-]+)/);
+    if (!m) return null;
+    try {
+      var cfg = JSON.parse(b64uToStr(m[1]));
+      return (cfg && typeof cfg === "object") ? cfg : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function str(v) { return typeof v === "string" ? v.trim() : ""; }
+
+  function safeHttpUrl(u) {
+    return /^https?:\/\//i.test(u) ? u : "";
+  }
+
+  function safeImgUrl(u) {
+    return (/^https?:\/\//i.test(u) || /^data:image\//i.test(u)) ? u : "";
+  }
+
+  /* ---------- odvození barev z jedné hlavní barvy ---------- */
+
+  function hexToRgb(hex) {
+    var n = parseInt(hex.slice(1), 16);
+    return [n >> 16 & 255, n >> 8 & 255, n & 255];
+  }
+
+  /* f < 0 tmavší (k černé), f > 0 světlejší (k bílé) */
+  function shade(hex, f) {
+    var rgb = hexToRgb(hex);
+    var t = f < 0 ? 0 : 255, a = Math.abs(f);
+    return "#" + rgb.map(function (v) {
+      return Math.round(v + (t - v) * a).toString(16).padStart(2, "0");
+    }).join("");
+  }
+
+  function luma(hex) {
+    var rgb = hexToRgb(hex).map(function (v) {
+      v /= 255;
+      return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+    });
+    return 0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2];
+  }
+
+  /* ---------- sestavení widgetu (jen createElement + textContent) ---------- */
+
+  var wrap = document.getElementById("wrap");
+
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text) e.textContent = text;
+    return e;
+  }
+
+  function showError(msg) {
+    var box = el("div", "chyba");
+    box.appendChild(el("div", null, msg));
+    var a = el("a", null, "Otevřít generátor widgetů");
+    a.href = "../";
+    a.target = "_blank";
+    a.rel = "noopener";
+    box.appendChild(a);
+    wrap.appendChild(box);
+  }
+
+  var cfg = getCfg();
+  if (!cfg) { showError("Widgetu chybí konfigurace."); return; }
+
+  var title = str(cfg.t);
+  var url = safeHttpUrl(str(cfg.u));
+  if (!title || !url) { showError("Neplatná konfigurace widgetu (chybí název nebo adresa)."); return; }
+
+  var subtitle = str(cfg.s);
+  var desc = str(cfg.d);
+  var btnText = str(cfg.b) || "Přejít na web";
+  var note = str(cfg.n);
+  var logo = safeImgUrl(str(cfg.l));
+  var color = /^#[0-9a-f]{6}$/i.test(str(cfg.c)) ? str(cfg.c) : "#00a2e8";
+
+  document.title = title;
+  var root = document.documentElement;
+  root.style.setProperty("--akcent", color);
+  root.style.setProperty("--akcent-tmavy", shade(color, -0.2));
+  root.style.setProperty("--akcent-svetly", shade(color, 0.9));
+  root.style.setProperty("--ramecek", shade(color, 0.84));
+  root.style.setProperty("--cta-text", luma(color) > 0.5 ? "#16323f" : "#ffffff");
+
+  var karta = el("a", "karta");
+  karta.href = url;
+  karta.target = "_blank";        /* QARO sandbox nemá allow-top-navigation, _blank projde */
+  karta.rel = "noopener";
+
+  if (logo) {
+    var logoBox = el("span", "logo");
+    var img = document.createElement("img");
+    img.src = logo;
+    img.alt = "";
+    img.onerror = function () { logoBox.remove(); };
+    logoBox.appendChild(img);
+    karta.appendChild(logoBox);
+  }
+
+  var obsah = el("span", "obsah");
+  obsah.appendChild(el("span", "nazev", title));
+  if (subtitle) obsah.appendChild(el("span", "podtitul", subtitle));
+  if (desc) obsah.appendChild(el("p", "popis", desc));
+  karta.appendChild(obsah);
+
+  var prava = el("span", "prava");
+  var cta = el("span", "cta", btnText);
+  cta.insertAdjacentHTML("beforeend",
+    '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">' +
+    '<path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="2" ' +
+    'stroke-linecap="round" stroke-linejoin="round"/></svg>');
+  prava.appendChild(cta);
+  if (note) prava.appendChild(el("span", "poznamka", note));
+  karta.appendChild(prava);
+
+  wrap.appendChild(karta);
+})();
+</script>
+
+</body>
+</html>
