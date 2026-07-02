@@ -2,8 +2,9 @@
 
 Interní nástroj DigiDay na rychlou výrobu odkazových widgetů vkládaných do webů přes iframe (typicky QARO iframe modul). Bez gitu a bez deploye, celá podoba widgetu je zakódovaná přímo v URL.
 
-- Generátor: https://dominikdigiday.github.io/qaro-widget/
+- Generátor: https://dominikdigiday.github.io/qaro-widget/ (zrcadlo: https://qaro-widget.vercel.app/)
 - Renderer widgetu: `https://dominikdigiday.github.io/qaro-widget/w/?c=…`
+- Krátký odkaz: `https://qaro-widget.vercel.app/s/<id>`
 
 ## Jak vyrobit widget
 
@@ -12,6 +13,14 @@ Interní nástroj DigiDay na rychlou výrobu odkazových widgetů vkládaných d
 3. Hotovo, nic se nikam nenasazuje.
 
 Úprava hotového widgetu: vlož jeho URL do pole „Upravit existující widget", formulář se předvyplní, uprav a do QARO dej novou URL.
+
+## Krátký odkaz
+
+Dlouhou URL widgetu jde v generátoru jedním klikem zkrátit na tvar `https://qaro-widget.vercel.app/s/<id>`. Zkracovač běží na Vercelu (projekt `qaro-widget`, tým digi-day-team1):
+
+- `POST /api/shorten` s `{"url": "<dlouhá URL widgetu>"}` uloží mapování do Vercel Blob (store `qaro-widget-links`) a vrátí krátký odkaz. Zkrátit jde jen URL rendereru z tohoto projektu, nic cizího.
+- `GET /s/<id>` přesměruje (302) na dlouhou URL. Id je hash konfigurace, stejný widget má vždy stejný krátký odkaz a mapování se nedá přepsat na jiný obsah.
+- Krátký odkaz funguje i jako `src` iframe, prohlížeč redirect uvnitř iframe normálně následuje.
 
 ## Jak to funguje
 

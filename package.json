@@ -1,0 +1,8 @@
+{
+  "name": "qaro-widget",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@vercel/blob": "latest"
+  }
+}

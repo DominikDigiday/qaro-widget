@@ -217,6 +217,13 @@
 
   .vystup .delka.varovani { color: #b3541e; font-weight: 600; }
 
+  .short-radek {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 8px;
+  }
+
   .neplatne {
     margin-top: 8px;
     padding: 10px 12px;
@@ -341,6 +348,16 @@
       </div>
 
       <div class="pole">
+        <label for="o-short">Krátký odkaz <span class="nepovinne">(hodí se tam, kde je dlouhá URL nepraktická)</span></label>
+        <input type="text" id="o-short" readonly placeholder="Vytvoří se tlačítkem níže">
+        <button type="button" class="kopirovat" data-cil="o-short">Kopírovat</button>
+        <div class="short-radek">
+          <button type="button" id="b-short">Vytvořit krátký odkaz</button>
+          <span class="napoveda" id="short-stav"></span>
+        </div>
+      </div>
+
+      <div class="pole">
         <label for="o-iframe">Kód pro vložení na jiný web</label>
         <textarea id="o-iframe" readonly></textarea>
         <button type="button" class="kopirovat" data-cil="o-iframe">Kopírovat</button>
@@ -384,6 +401,11 @@
   var sirka = $("f-w"), vyska = $("f-h");
   var nahled = $("nahled"), neplatne = $("neplatne");
   var oUrl = $("o-url"), oIframe = $("o-iframe"), oDelka = $("o-delka");
+  var oShort = $("o-short"), bShort = $("b-short"), shortStav = $("short-stav");
+
+  /* API zkracovače běží na Vercelu, generátor může běžet i na GitHub Pages */
+  var API_SHORTEN = "https://qaro-widget.vercel.app/api/shorten";
+  var zkracenaZ = "";   /* dlouhá URL, ke které patří aktuální krátký odkaz */
 
   var VZOR = {
     t: "Střední škola polytechnická Hustopeče",
@@ -478,6 +500,13 @@
       oDelka.textContent = "";
     }
 
+    /* krátký odkaz patří ke konkrétní URL, po změně widgetu už neplatí */
+    if (oUrl.value !== zkracenaZ) {
+      oShort.value = "";
+      shortStav.textContent = "";
+    }
+    bShort.disabled = !platne;
+
     try { localStorage.setItem("qaro-widget-form", JSON.stringify(cfg)); } catch (e) {}
   }
 
@@ -522,6 +551,32 @@
     } catch (e) {
       alert("Konfiguraci z URL se nepodařilo přečíst.");
     }
+  });
+
+  bShort.addEventListener("click", function () {
+    var dlouha = oUrl.value;
+    if (!dlouha) return;
+    bShort.disabled = true;
+    shortStav.textContent = "Vytvářím…";
+    fetch(API_SHORTEN, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url: dlouha })
+    }).then(function (r) {
+      return r.json().then(function (d) {
+        if (!r.ok) throw new Error(d.error || ("Chyba " + r.status));
+        return d;
+      });
+    }).then(function (d) {
+      oShort.value = d.shortUrl;
+      zkracenaZ = dlouha;
+      shortStav.textContent = "Hotovo, odkaz je trvalý.";
+    }).catch(function (e) {
+      oShort.value = "";
+      shortStav.textContent = "Nepodařilo se: " + e.message;
+    }).finally(function () {
+      bShort.disabled = false;
+    });
   });
 
   document.querySelectorAll(".kopirovat").forEach(function (btn) {
